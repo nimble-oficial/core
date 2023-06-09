@@ -1,13 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { Routes } from "discord-api-types/v10";
 import { rest } from "src/shared/lib/discord-js";
-import { OpenAiRepository } from "../open-ai/open-ai.repository";
+
 import { DiscordMessageDto } from "./dto/discord-message.dto";
 
 @Injectable()
 export class DiscordRepository {
-  constructor(private openAiRepository: OpenAiRepository) {}
-
   async sendPlainText(content: string, channelId: string) {
     await rest.post(Routes.channelMessages(channelId), {
       body: { content },
@@ -28,24 +26,6 @@ export class DiscordRepository {
     await rest.post(Routes.channelMessages(message.channelId), {
       body: {
         content: replyContent,
-        message_reference: {
-          message_id: message.id,
-          guild_id: message.guildId,
-          channel_id: message.channelId,
-        },
-      },
-    });
-  }
-
-  async replyWithChatGpt(message: DiscordMessageDto) {
-    const chatgptReplyContent =
-      await this.openAiRepository.createChatCompletion(
-        message.commandName.split(": ")[1],
-      );
-
-    await rest.post(Routes.channelMessages(message.channelId), {
-      body: {
-        content: chatgptReplyContent,
         message_reference: {
           message_id: message.id,
           guild_id: message.guildId,

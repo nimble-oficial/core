@@ -99,10 +99,6 @@ export class CommandsRepository {
     );
   }
 
-  async replyWithChatGpt(message: DiscordMessageDto) {
-    return this.discordRepository.replyWithChatGpt(message);
-  }
-
   async replyMessage(content: string, message: DiscordMessageDto) {
     return this.discordRepository.replyMessage(content, message);
   }

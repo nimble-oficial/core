@@ -7,7 +7,7 @@ import { BuildersModule } from "../builders/builders.module";
 import { CommandsModule } from "../commands/commands.module";
 import { DiscordModule } from "../discord/discord.module";
 import { GuildsModule } from "../guilds/guilds.module";
-import { OpenAiModule } from "../open-ai/open-ai.module";
+
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 
@@ -17,7 +17,6 @@ import { AppService } from "./app.service";
     CommandsModule,
     GuildsModule,
     DiscordModule,
-    OpenAiModule,
     MongooseModule.forRoot("mongodb://localhost:27017/discord-bot-creator"),
     ConfigModule.forRoot(),
   ],

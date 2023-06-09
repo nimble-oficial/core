@@ -21,9 +21,6 @@ export class NodeHandler {
       case "reply-message":
         await this.commandsRepository.replyMessage(replyContent, message);
         break;
-      case "reply-with-chat-gpt":
-        await this.commandsRepository.replyWithChatGpt(message);
-        break;
     }
   }
 }

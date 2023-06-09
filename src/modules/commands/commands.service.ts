@@ -303,5 +303,7 @@ export class CommandsService {
     const builder = await this.buildersRepository.findById(
       foundCommand.builderId,
     );
+
+    console.log(builder);
   }
 }

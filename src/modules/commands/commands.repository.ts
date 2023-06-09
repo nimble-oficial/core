@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, ObjectId } from "mongoose";
+import { DEFAULT_OPTION_VALUES } from "src/shared";
 import { DiscordRepository } from "../discord/discord.repository";
 import { DiscordMessageDto } from "../discord/dto/discord-message.dto";
 import { Commands } from "./commands.schema";
@@ -17,7 +18,8 @@ export class CommandsRepository {
   async create(createCommandDto: CreateCommandDto): Promise<ObjectId> {
     const createdCommand = await this.commandsModel.create({
       ...createCommandDto,
-      allowedChannel: "all",
+      allowedChannel: DEFAULT_OPTION_VALUES.allowedChannel,
+      allowedRole: DEFAULT_OPTION_VALUES.allowedRole,
       createdAt: new Date(),
     });
 
@@ -39,7 +41,9 @@ export class CommandsRepository {
       .find({
         guildId,
       })
-      .select("enabled name description builderId createdAt allowedChannel")
+      .select(
+        "enabled name description builderId createdAt allowedChannel allowedRole",
+      )
       .sort({
         createdAt: -1,
       });

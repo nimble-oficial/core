@@ -9,7 +9,7 @@ import {
   Patch,
   Post,
 } from "@nestjs/common";
-import { HttpResponses } from "src/shared/helpers/responses";
+import { HttpResponses } from "src/modules/discord/responses";
 import { CommandsService } from "./commands.service";
 import { CreateCommandDto } from "./dto/create-command.dto";
 import { DeleteCommandDto } from "./dto/delete-command.dto";

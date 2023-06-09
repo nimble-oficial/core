@@ -8,7 +8,7 @@ import {
   Patch,
   Post,
 } from "@nestjs/common";
-import { HttpResponses } from "src/shared/helpers/responses";
+import { HttpResponses } from "src/modules/discord/responses";
 import { BuildersService } from "./builders.service";
 import { CreateBuilderDto } from "./dto/create-builder.dto";
 import { SaveBuilderDto } from "./dto/save-builder.dto";

@@ -18,6 +18,7 @@ import { HttpException } from "src/shared/exceptions";
 
 import { isCommandAllowedInChannel } from "src/shared/helpers/is-command-allowed-in-channel";
 import { Zod } from "src/shared/helpers/zod/validator";
+import { DiscordRepository } from "../discord/discord.repository";
 import { DiscordMessageDto } from "../discord/dto/discord-message.dto";
 import {
   DeleteCommandDto,
@@ -30,6 +31,7 @@ export class CommandsService {
   constructor(
     private commandsRepository: CommandsRepository,
     private buildersRepository: BuildersRepository,
+    private discordRepository: DiscordRepository,
   ) {}
 
   /**
@@ -305,5 +307,19 @@ export class CommandsService {
     const builder = await this.buildersRepository.findById(
       foundCommand.builderId,
     );
+
+    if (foundCommand?.allowedRole !== "@everyone") {
+      const guildMember = await this.discordRepository.getGuildMemberById(
+        discordMessage.guildId,
+        discordMessage.author.id,
+      );
+
+      // @ts-ignore
+      const hasRole = guildMember.roles.includes(foundCommand.allowedRole);
+
+      console.log(
+        `User ${discordMessage.author.username} has role ${foundCommand.allowedRole}: ${hasRole}`,
+      );
+    }
   }
 }

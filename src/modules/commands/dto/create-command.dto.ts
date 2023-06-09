@@ -1,3 +1,4 @@
+import { DEFAULT_OPTION_VALUES } from "src/shared";
 import { z } from "zod";
 
 export const createCommandDtoSchema = z
@@ -24,12 +25,8 @@ export const createCommandDtoSchema = z
       }),
     enabled: z.boolean().default(true),
     guildId: z.string(),
-    // options: z.object({
-    //   notEnabledMessage: z.string().max(200, {
-    //     message: "Not enabled message cannot exceed 100 characters.",
-    //   }),
-    //   canSendNotEnabledMessage: z.boolean().default(true),
-    // }),
+    allowedChannel: z.string().default(DEFAULT_OPTION_VALUES.allowedChannel),
+    allowedRole: z.string().default(DEFAULT_OPTION_VALUES.allowedRole),
   })
   .strict();
 

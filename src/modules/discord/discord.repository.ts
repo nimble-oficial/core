@@ -42,8 +42,8 @@ export class DiscordRepository {
     );
   }
 
-  async getGuildMembers(id: string) {
-    return rest.get(Routes.guildMembers(id));
+  async getGuildMembers(guildId: string) {
+    return rest.get(Routes.guildMembers(guildId));
   }
 
   async getGuildById(id: string) {
@@ -54,7 +54,11 @@ export class DiscordRepository {
     return rest.post(Routes.channelTyping(message.channelId));
   }
 
-  async getGuildRoles(id: string) {
-    return rest.get(Routes.guildRoles(id));
+  async getGuildRoles(guildId: string) {
+    return rest.get(Routes.guildRoles(guildId));
+  }
+
+  async getGuildMemberById(guildId: string, memberId: string) {
+    return rest.get(Routes.guildMember(guildId, memberId));
   }
 }

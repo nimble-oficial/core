@@ -39,6 +39,9 @@ export class Commands {
 
   @Prop()
   allowedChannel: string;
+
+  @Prop()
+  allowedRole: string;
 }
 
 export const CommandsSchema = SchemaFactory.createForClass(Commands);

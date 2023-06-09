@@ -1,12 +1,9 @@
 export const isCommandAllowedInChannel = (
   allowedChannelId = "all",
-  channelIdWhereMessageCame: string,
+  messageChannelId: string,
 ) => {
-  if (allowedChannelId.toLowerCase() === "all") {
-    return true;
-  }
-
   return (
-    allowedChannelId.toLowerCase() === channelIdWhereMessageCame.toLowerCase()
+    allowedChannelId === messageChannelId ||
+    allowedChannelId.toLowerCase() === "all"
   );
 };

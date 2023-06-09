@@ -42,26 +42,12 @@ export class DiscordRepository {
     );
   }
 
-  async getCurrentUserGuilds(token: string) {
-    return rest.get(Routes.userGuilds(), {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  }
-
   async getGuildMembers(id: string) {
     return rest.get(Routes.guildMembers(id));
   }
 
   async getGuildById(id: string) {
     return await rest.get(Routes.guild(id));
-  }
-
-  async getGuildChannels(id: string, query: any) {
-    return rest.get(Routes.guildChannels(id), {
-      query,
-    });
   }
 
   async showTyping(message: DiscordMessageDto) {

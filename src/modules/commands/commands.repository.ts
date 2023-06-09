@@ -17,6 +17,7 @@ export class CommandsRepository {
   async create(createCommandDto: CreateCommandDto): Promise<ObjectId> {
     const createdCommand = await this.commandsModel.create({
       ...createCommandDto,
+      allowedChannel: "all",
       createdAt: new Date(),
     });
 

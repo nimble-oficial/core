@@ -125,7 +125,9 @@ export class CommandsService {
       updateCommandDto.guildId,
     );
 
-    if (foundCommand) {
+    console.log(foundCommand, updateCommandDto);
+
+    if (foundCommand && foundCommand.name !== updateCommandDto.name) {
       throw new HttpException(
         "Command with same name already exists",
         HttpStatus.BAD_REQUEST,
@@ -182,7 +184,7 @@ export class CommandsService {
     const isCommandEnabled = command?.enabled ?? true;
 
     if (!isCommandEnabled) {
-      if (command.options.canSendNotEnabledMessage) {
+      if (command.options?.canSendNotEnabledMessage ?? false) {
         await this.commandsRepository.sendNotEnabledMessage(
           command.options.notEnabledMessage,
           messageFromDiscord,
@@ -303,7 +305,5 @@ export class CommandsService {
     const builder = await this.buildersRepository.findById(
       foundCommand.builderId,
     );
-
-    console.log(builder);
   }
 }

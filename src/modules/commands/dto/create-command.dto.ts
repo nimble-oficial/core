@@ -1,4 +1,3 @@
-import { DEFAULT_OPTION_VALUES } from "src/shared";
 import { z } from "zod";
 
 export const createCommandDtoSchema = z
@@ -14,19 +13,13 @@ export const createCommandDtoSchema = z
         message: "Name cannot exceed 20 characters.",
       }),
     description: z
-      .string({
-        required_error: "Description is required.",
-      })
-      .min(1, {
-        message: "Description is required.",
-      })
+      .string()
       .max(100, {
         message: "Description cannot exceed 100 characters.",
-      }),
+      })
+      .optional(),
     enabled: z.boolean().default(true),
     guildId: z.string(),
-    allowedChannel: z.string().default(DEFAULT_OPTION_VALUES.allowedChannel),
-    allowedRole: z.string().default(DEFAULT_OPTION_VALUES.allowedRole),
   })
   .strict();
 

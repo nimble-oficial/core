@@ -3,12 +3,13 @@ import { HydratedDocument } from "mongoose";
 
 export type CommandsDocument = HydratedDocument<Commands>;
 
-class CommandOptions {
-  @Prop({ default: "This command is not enabled." })
-  notEnabledMessage: string;
+@Schema()
+class CommandAllowedOptions {
+  @Prop()
+  id: string;
 
-  @Prop({ default: true })
-  canSendNotEnabledMessage: boolean;
+  @Prop()
+  name: string;
 }
 
 @Schema()
@@ -32,16 +33,25 @@ export class Commands {
   builderId: string;
 
   @Prop()
-  options: CommandOptions;
-
-  @Prop()
   updatedAt: Date;
 
-  @Prop()
-  allowedChannel: string;
+  @Prop({ type: CommandAllowedOptions })
+  allowedChannel: {
+    id: string;
+    name: string;
+  };
 
-  @Prop()
-  allowedRole: string;
+  @Prop({ type: CommandAllowedOptions })
+  allowedRole: {
+    id: string;
+    name: string;
+  };
+
+  @Prop({ default: true })
+  sendCommandNotEnabledMessage: boolean;
+
+  @Prop({ default: "Command is not enabled." })
+  commandNotEnabledMessage: string;
 }
 
 export const CommandsSchema = SchemaFactory.createForClass(Commands);

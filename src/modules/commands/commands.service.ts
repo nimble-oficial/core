@@ -16,7 +16,12 @@ import {
 
 import { HttpException } from "src/shared/exceptions";
 
-import { isCommandAllowedInChannel } from "src/shared/helpers/is-command-allowed-in-channel";
+import {
+  DEFAULT_OPTION_VALUES,
+  NodeHandler,
+  executeNodes,
+  isCommandAllowedInChannel,
+} from "src/shared";
 import { Zod } from "src/shared/helpers/zod/validator";
 import { DiscordRepository } from "../discord/discord.repository";
 import { DiscordMessageDto } from "../discord/dto/discord-message.dto";
@@ -127,8 +132,6 @@ export class CommandsService {
       updateCommandDto.guildId,
     );
 
-    console.log(foundCommand, updateCommandDto);
-
     if (foundCommand && foundCommand.name !== updateCommandDto.name) {
       throw new HttpException(
         "Command with same name already exists",
@@ -173,7 +176,7 @@ export class CommandsService {
 
   /**
    *`sendMessageCommandNotEnabled` method sends a message if command is not enabled.
-    If command has `canSendNotEnabledMessage` option enabled, sends a "Command not enabled" message.
+   * If command has `canSendNotEnabledMessage` option enabled, sends a "Command not enabled" message.
    *
    * @param command command (from database) to check if is enabled
    * @param messageFromDiscord message from discord
@@ -183,19 +186,21 @@ export class CommandsService {
     command: Commands,
     messageFromDiscord: DiscordMessageDto,
   ): Promise<void> {
-    const isCommandEnabled = command?.enabled ?? true;
-
-    if (!isCommandEnabled) {
-      if (command.options?.canSendNotEnabledMessage ?? false) {
-        await this.commandsRepository.sendNotEnabledMessage(
-          command.options.notEnabledMessage,
-          messageFromDiscord,
-        );
-        return;
-      }
-
+    if (!command?.sendCommandNotEnabledMessage) {
+      console.log(
+        `Command "${command.name}" is not enabled. This command *HAS NOT* "canSendNotEnabledMessage" option enabled. *Ignoring*..."`,
+      );
       return;
     }
+
+    console.log(
+      `Command "${command.name}" is not enabled. This command HAS "canSendNotEnabledMessage" option enabled. Sending message..."`,
+    );
+
+    await this.commandsRepository.sendNotEnabledMessage(
+      command.commandNotEnabledMessage,
+      messageFromDiscord,
+    );
   }
 
   /**
@@ -216,33 +221,31 @@ export class CommandsService {
   }
 
   /**
-   *`checkIfCommandIsAllowedInChannel` method checks if command is allowed in channel.
+   *`sendCommandNotAllowedInChannelMessage` method sends a message if command is not allowed in channel.
    * The allowed channels are defined in `allowedChannel` property in command.
    *
-   * It calls `isCommandAllowedInChannel` function to check if command is allowed in channel.
    * If not allowed, replies for message owner with "Command not allowed" content.
    *
-   * @param Commands command
    * @param messageFromDiscord message from discord
    * @returns void
    */
-  async checkIfCommandIsAllowedInChannel(
-    command: Commands,
+  async sendCommandNotAllowedInChannelMessage(
     messageFromDiscord: DiscordMessageDto,
   ) {
-    const canSendInChannel = isCommandAllowedInChannel(
-      command.allowedChannel,
-      messageFromDiscord.channelId,
+    // TODO: allow user to create custom error message
+    await this.commandsRepository.replyMessage(
+      "Opa! Esse comando não pode ser executado nesse canal.",
+      messageFromDiscord,
     );
+  }
 
-    if (!canSendInChannel) {
-      await this.commandsRepository.replyMessage(
-        "Opa! Esse comando não pode ser executado nesse canal.",
-        messageFromDiscord,
-      );
-
-      return;
-    }
+  async sendCommandNotAllowedWithRoleMessage(
+    messageFromDiscord: DiscordMessageDto,
+  ) {
+    await this.commandsRepository.replyMessage(
+      "Opa! Esse comando não pode ser executado, pois você não tem o cargo necessário.",
+      messageFromDiscord,
+    );
   }
 
   /**
@@ -279,6 +282,28 @@ export class CommandsService {
     return foundCommand;
   }
 
+  async doesMessageAuthorHaveRoleToRunSpecifiedCommand(
+    command: Commands,
+    messageFromDiscord: DiscordMessageDto,
+  ): Promise<boolean> {
+    if (command?.allowedRole?.id === DEFAULT_OPTION_VALUES.allowedRole.id) {
+      return true;
+    }
+
+    const guildMember = await this.discordRepository.getGuildMemberById(
+      messageFromDiscord.guildId,
+      messageFromDiscord.author.id,
+    );
+
+    if (!guildMember || !command?.allowedRole?.id) {
+      return false;
+    }
+
+    // TODO:
+    // @ts-ignore
+    return guildMember?.roles?.includes(command.allowedRole.id);
+  }
+
   /**
    *`run` method runs a command. It gets a command from discord message.
    * First, check if message is sent from a bot. If true, then nothing happens. It avoid infinite loops.
@@ -294,31 +319,79 @@ export class CommandsService {
    * @returns void
    */
   async run(runCommandDto: RunCommandDto): Promise<void> {
-    const { author } = runCommandDto;
     const discordMessage = runCommandDto as DiscordMessageDto;
 
-    if (author?.bot) return;
+    try {
+      if (discordMessage.author?.bot) {
+        console.log(
+          `Message ${discordMessage.id} from channel ${discordMessage.channelId} sent from bot, ignoring...`,
+        );
+        return;
+      }
 
-    const foundCommand = await this.getCommandFromMessage(discordMessage);
+      const foundCommand = await this.getCommandFromMessage(discordMessage);
 
-    await this.sendMessageCommandNotEnabled(foundCommand, discordMessage);
-    await this.checkIfCommandIsAllowedInChannel(foundCommand, discordMessage);
+      const isCommandEnabled = foundCommand?.enabled;
 
-    const builder = await this.buildersRepository.findById(
-      foundCommand.builderId,
-    );
+      if (!isCommandEnabled) {
+        await this.sendMessageCommandNotEnabled(foundCommand, discordMessage);
+        return;
+      }
 
-    if (foundCommand?.allowedRole !== "@everyone") {
-      const guildMember = await this.discordRepository.getGuildMemberById(
-        discordMessage.guildId,
-        discordMessage.author.id,
+      const isCommandAllowedInCurrentChannel = isCommandAllowedInChannel(
+        foundCommand.allowedChannel.id,
+        discordMessage.channelId,
       );
 
-      // @ts-ignore
-      const hasRole = guildMember.roles.includes(foundCommand.allowedRole);
+      if (!isCommandAllowedInCurrentChannel) {
+        console.log(
+          `Command "${foundCommand.name}" is not allowed in channel ${discordMessage.channelId}, ignoring...`,
+        );
 
-      console.log(
-        `User ${discordMessage.author.username} has role ${foundCommand.allowedRole}: ${hasRole}`,
+        await this.sendCommandNotAllowedInChannelMessage(discordMessage);
+        return;
+      }
+
+      const doesUserHaveRole =
+        await this.doesMessageAuthorHaveRoleToRunSpecifiedCommand(
+          foundCommand,
+          discordMessage,
+        );
+
+      if (!doesUserHaveRole) {
+        console.log(
+          `Command "${foundCommand.name}" is not allowed for user ${discordMessage.author.id} with role ${foundCommand.allowedRole.name}, ignoring...`,
+        );
+
+        await this.sendCommandNotAllowedWithRoleMessage(discordMessage);
+        return;
+      }
+
+      const builder = await this.buildersRepository.findById(
+        foundCommand.builderId,
+      );
+
+      if (!builder) {
+        throw new Error(`Builder for command "${foundCommand.name}" not found`);
+      }
+
+      const { nodes, edges } = builder;
+
+      const nodeHandler = new NodeHandler(this.commandsRepository);
+
+      const processNode = async (step) => {
+        await nodeHandler.execute(step.data, discordMessage);
+      };
+
+      executeNodes(nodes, edges, processNode);
+    } catch (err) {
+      console.log(`Catch error: ${err.message}`);
+
+      // TODO: allow user to create custom error message
+
+      await this.commandsRepository.replyMessage(
+        "Ops! Something went wrong while executing this command. Please, try again later.",
+        discordMessage,
       );
     }
   }

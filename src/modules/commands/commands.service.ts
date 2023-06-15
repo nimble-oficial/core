@@ -234,7 +234,7 @@ export class CommandsService {
   ) {
     // TODO: allow user to create custom error message
     await this.commandsRepository.replyMessage(
-      "Opa! Esse comando não pode ser executado nesse canal.",
+      "Ops! This command cannot be executed in this channel.",
       messageFromDiscord,
     );
   }
@@ -243,7 +243,7 @@ export class CommandsService {
     messageFromDiscord: DiscordMessageDto,
   ) {
     await this.commandsRepository.replyMessage(
-      "Opa! Esse comando não pode ser executado, pois você não tem o cargo necessário.",
+      "Ops! This command cannot be executed because you don't have the required role(s).",
       messageFromDiscord,
     );
   }

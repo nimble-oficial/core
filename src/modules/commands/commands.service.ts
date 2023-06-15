@@ -222,9 +222,6 @@ export class CommandsService {
 
   /**
    *`sendCommandNotAllowedInChannelMessage` method sends a message if command is not allowed in channel.
-   * The allowed channels are defined in `allowedChannel` property in command.
-   *
-   * If not allowed, replies for message owner with "Command not allowed" content.
    *
    * @param messageFromDiscord message from discord
    * @returns void
@@ -239,9 +236,14 @@ export class CommandsService {
     );
   }
 
+  /**
+   *`sendCommandNotAllowedWithRoleMessage` method sends a message if command is not allowed with role.
+   *
+   * @param messageFromDiscord
+   */
   async sendCommandNotAllowedWithRoleMessage(
     messageFromDiscord: DiscordMessageDto,
-  ) {
+  ): Promise<void> {
     await this.commandsRepository.replyMessage(
       "Ops! This command cannot be executed because you don't have the required role(s).",
       messageFromDiscord,
@@ -282,6 +284,16 @@ export class CommandsService {
     return foundCommand;
   }
 
+  /**
+   *`doesMessageAuthorHaveRoleToRunSpecifiedCommand` method checks if message author has role to run specified command.
+   * First, check if command allowed option is set to `all` (default value). If true, returns true.
+   *
+   * If not, gets guild member from discord and checks if member has role to run command.
+   *
+   * @param command
+   * @param messageFromDiscord
+   * @returns boolean if message author has role to run specified command
+   */
   async doesMessageAuthorHaveRoleToRunSpecifiedCommand(
     command: Commands,
     messageFromDiscord: DiscordMessageDto,
@@ -311,7 +323,7 @@ export class CommandsService {
    * After that, gets a command from message, find command in database and check if command is enabled.
    * If not enabled, calls `sendMessageCommandNotEnabled` function to send a message to message owner.
    *
-   * Also, checks if command is allowed in channel.
+   * Also, checks if command is allowed in channel and if message author has role to run command.
    * Finally, gets builder from database and send builder to queue to be processed.
    *
    * @param runCommandDto data to run command

@@ -1,8 +1,10 @@
-import { Injectable } from "@nestjs/common";
+import { HttpStatus, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { SaveBuilderDto } from "./dto/save-builder.dto";
 
 import mongoose, { Model } from "mongoose";
+import { HttpException } from "src/shared/exceptions";
+import { initialBuilderNode } from "src/shared/mocks/nodes/initial-node";
 import { Builders } from "./builders.schema";
 import {
   CreateBuilderDto,
@@ -16,7 +18,22 @@ export class BuildersRepository {
     @InjectModel(Builders.name) private buildersModel: Model<Builders>,
   ) {}
 
+  private hasRootNode(nodes: any[]): boolean {
+    return nodes.find(
+      (node) => node.isRoot && node.data.key === initialBuilderNode.data.key,
+    );
+  }
+
   async save(saveBuilderDto: SaveBuilderDto): Promise<void> {
+    const hasRootNode = this.hasRootNode(saveBuilderDto.nodes);
+
+    if (!hasRootNode) {
+      throw new HttpException(
+        "The builder must have a root node",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     await this.buildersModel.findByIdAndUpdate(saveBuilderDto.builderId, {
       ...saveBuilderDto,
       updatedAt: new Date(),
@@ -33,8 +50,8 @@ export class BuildersRepository {
       commandName: createBuilderDto.commandName,
       edges: [],
       guildId: createBuilderDto.guildId,
-      nodes: [],
-      zoom: 1,
+      nodes: [initialBuilderNode],
+      zoom: 2,
       createdAt: new Date(),
     });
 

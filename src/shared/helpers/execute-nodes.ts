@@ -22,7 +22,8 @@ export const executeNodes = (nodes, edges, processNode: ProcessNode): void => {
     }
   };
 
-  const rootNode = nodes.find((node) => node?.isRoot === true);
-
-  depthFirstSearch(rootNode);
+  // When user creates a new command, under the hood a builder with ONE node will be created.
+  // The created node will be the first node in the array of nodes.
+  // So we can start the DFS from the first node.
+  depthFirstSearch(nodes[0]);
 };

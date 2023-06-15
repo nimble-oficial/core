@@ -72,7 +72,7 @@ export class CommandsRepository {
       .findOne({
         builderId,
       })
-      .select("name enabled description createdAt");
+      .select("name enabled description createdAt guildId");
   }
 
   async deleteByBuilderId(builderId: string): Promise<void> {
@@ -82,7 +82,7 @@ export class CommandsRepository {
   }
 
   async sendNotEnabledMessage(content: string, message: DiscordMessageDto) {
-    return this.discordRepository.sendPlainText(content, message.channelId);
+    return this.discordRepository.replyMessage(content, message);
   }
 
   async sendNotFoundMessage(commandName: string, message: DiscordMessageDto) {
@@ -92,23 +92,32 @@ export class CommandsRepository {
     );
   }
 
-  async sendMessage(content: string, message: DiscordMessageDto) {
-    return this.discordRepository.sendPlainText(content, message.channelId);
+  async sendMessage(
+    content: string,
+    message: DiscordMessageDto,
+  ): Promise<void> {
+    await this.discordRepository.sendPlainText(content, message.channelId);
   }
 
-  async mentionMessageOwner(content: string, message: DiscordMessageDto) {
-    return this.discordRepository.mentionMessageOwner(
+  async mentionMessageOwner(
+    content: string,
+    message: DiscordMessageDto,
+  ): Promise<void> {
+    await this.discordRepository.mentionMessageOwner(
       content,
       message.channelId,
       message.author.id,
     );
   }
 
-  async replyMessage(content: string, message: DiscordMessageDto) {
-    return this.discordRepository.replyMessage(content, message);
+  async replyMessage(
+    content: string,
+    message: DiscordMessageDto,
+  ): Promise<void> {
+    await this.discordRepository.replyMessage(content, message);
   }
 
-  async showTyping(message: DiscordMessageDto) {
-    return this.discordRepository.showTyping(message);
+  async showTyping(message: DiscordMessageDto): Promise<void> {
+    await this.discordRepository.showTyping(message);
   }
 }

@@ -5,6 +5,7 @@ export interface DiscordMessageDto {
     id: string;
     username: string;
     tag: string;
+    bot: boolean;
   };
   channelId: string;
   guildId: string;

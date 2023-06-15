@@ -6,7 +6,7 @@ import { DiscordMessageDto } from "./dto/discord-message.dto";
 
 @Injectable()
 export class DiscordRepository {
-  async sendPlainText(content: string, channelId: string) {
+  async sendPlainText(content: string, channelId: string): Promise<void> {
     await rest.post(Routes.channelMessages(channelId), {
       body: { content },
     });
@@ -16,13 +16,16 @@ export class DiscordRepository {
     content: string,
     channelId: string,
     authorId: string,
-  ) {
+  ): Promise<void> {
     await rest.post(Routes.channelMessages(channelId), {
       body: { content: `<@${authorId}>, ${content}` },
     });
   }
 
-  async replyMessage(replyContent: string, message: DiscordMessageDto) {
+  async replyMessage(
+    replyContent: string,
+    message: DiscordMessageDto,
+  ): Promise<void> {
     await rest.post(Routes.channelMessages(message.channelId), {
       body: {
         content: replyContent,
@@ -35,7 +38,10 @@ export class DiscordRepository {
     });
   }
 
-  async sendCommandNotFoundMessage(commandName: string, channelId: string) {
+  async sendCommandNotFoundMessage(
+    commandName: string,
+    channelId: string,
+  ): Promise<void> {
     await this.sendPlainText(
       `O comando "${commandName}" não existe.`,
       channelId,

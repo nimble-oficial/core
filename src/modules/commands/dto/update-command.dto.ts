@@ -44,6 +44,13 @@ export const updateCommandDtoSchema = z
     }),
     commandId: z.string(),
     guildId: z.string(),
+    sendCommandNotEnabledMessage: z.boolean().default(true),
+    commandNotEnabledMessage: z
+      .string()
+      .min(1)
+      .max(2000)
+      .optional()
+      .default("Command is not enabled."),
   })
   .strict();
 

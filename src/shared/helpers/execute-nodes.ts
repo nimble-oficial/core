@@ -1,5 +1,14 @@
 type ProcessNode = (node: any) => void;
 
+/**
+ * Executes a function for each node in the graph.
+ * The function is executed in a depth-first search order.
+ *
+ * @param nodes The nodes in the graph.
+ * @param edges The edges in the graph.
+ * @param processNode The function to execute for each node.
+ * @returns void
+ */
 export const executeNodes = (nodes, edges, processNode: ProcessNode): void => {
   const visited = new Map();
 

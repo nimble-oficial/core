@@ -1,8 +1,5 @@
 import { HttpResponses } from ".";
-import {
-  getBaseErrorResponse,
-  getBaseSuccessResponse,
-} from "../../../shared/mocks";
+import { getBaseErrorResponse, getBaseSuccessResponse } from "../mocks";
 
 const sut = HttpResponses;
 

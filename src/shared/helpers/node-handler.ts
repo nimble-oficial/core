@@ -6,20 +6,21 @@ export class NodeHandler {
   constructor(private commandsRepository: CommandsRepository) {}
 
   async execute(data: BuilderNodeData, message: DiscordMessageDto) {
-    const { content, key, replyContent } = data;
-
+    if (!data.enabled) {
+      console.log(`Node ${data.key} is disabled. Ignoring...`);
+      return;
+    }
     // TODO: add as config option
     await this.commandsRepository.showTyping(message);
 
-    switch (key) {
+    // TODO: add timeout
+
+    switch (data?.key) {
       case "send-message":
-        await this.commandsRepository.sendMessage(content, message);
-        break;
-      case "send-message-with-mention-owner":
-        await this.commandsRepository.mentionMessageOwner(content, message);
+        await this.commandsRepository.sendMessage(data?.content, message);
         break;
       case "reply-message":
-        await this.commandsRepository.replyMessage(replyContent, message);
+        await this.commandsRepository.replyMessage(data?.replyContent, message);
         break;
     }
   }

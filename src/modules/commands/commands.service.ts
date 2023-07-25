@@ -3,33 +3,29 @@ import { HttpStatus, Injectable } from "@nestjs/common";
 import { BuildersRepository } from "../builders/builders.repository";
 import { CommandsRepository } from "./commands.repository";
 import { Commands } from "./commands.schema";
+
 import {
   CreateCommandDto,
   CreateCommandDtoOutput,
-  createCommandDtoSchema,
-} from "./dto/create-command.dto";
-
-import {
+  DeleteCommandDto,
+  RunCommandDto,
   UpdateCommandDto,
+  createCommandDtoSchema,
+  deleteCommandDtoSchema,
   updateCommandDtoSchema,
-} from "./dto/update-command.dto";
-
-import { HttpException } from "src/shared/exceptions";
+} from "./dto";
 
 import {
   DEFAULT_OPTION_VALUES,
+  HttpException,
   NodeHandler,
+  Zod,
   executeNodes,
   isCommandAllowedInChannel,
 } from "src/shared";
-import { Zod } from "src/shared/helpers/zod/validator";
+
 import { DiscordRepository } from "../discord/discord.repository";
 import { DiscordMessageDto } from "../discord/dto/discord-message.dto";
-import {
-  DeleteCommandDto,
-  deleteCommandDtoSchema,
-} from "./dto/delete-command.dto";
-import { RunCommandDto } from "./dto/run-command.dto";
 
 @Injectable()
 export class CommandsService {
@@ -79,6 +75,26 @@ export class CommandsService {
     });
 
     return { _id: createdCommandId.toString(), builderId: createdBuilder._id };
+  }
+
+  /**
+   * `findById` method finds a command by id.
+   *
+   * If command not found, throws an error.
+   *
+   * @throws {HttpException} if command not found
+   * @param {string} id command id to find command
+   * @returns {Promise<Commands | null>} found command
+   *
+   */
+  async findById(id: string): Promise<Commands | null> {
+    const foundCommand = await this.commandsRepository.findById(id);
+
+    if (!foundCommand) {
+      throw new HttpException("Command not found", HttpStatus.NOT_FOUND);
+    }
+
+    return foundCommand;
   }
 
   /**
@@ -188,13 +204,13 @@ export class CommandsService {
   ): Promise<void> {
     if (!command?.sendCommandNotEnabledMessage) {
       console.log(
-        `Command "${command.name}" is not enabled. This command *HAS NOT* "canSendNotEnabledMessage" option enabled. *Ignoring*..."`,
+        `Command "${command?.name}" is not enabled. This command *HAS NOT* "canSendNotEnabledMessage" option enabled. *Ignoring*..."`,
       );
       return;
     }
 
     console.log(
-      `Command "${command.name}" is not enabled. This command HAS "canSendNotEnabledMessage" option enabled. Sending message..."`,
+      `Command "${command?.name}" is not enabled. This command HAS "canSendNotEnabledMessage" option enabled. Sending message..."`,
     );
 
     await this.commandsRepository.sendNotEnabledMessage(
@@ -333,52 +349,60 @@ export class CommandsService {
   async run(runCommandDto: RunCommandDto): Promise<void> {
     const discordMessage = runCommandDto as DiscordMessageDto;
 
-    try {
-      if (discordMessage.author?.bot) {
-        console.log(
-          `Message ${discordMessage.id} from channel ${discordMessage.channelId} sent from bot, ignoring...`,
-        );
-        return;
-      }
+    if (discordMessage.author?.bot) {
+      console.log(
+        `Message ${discordMessage.id} from channel ${discordMessage.channelId} sent from bot, ignoring...`,
+      );
+      return;
+    }
 
-      const foundCommand = await this.getCommandFromMessage(discordMessage);
+    const foundCommand = await this.getCommandFromMessage(discordMessage);
 
-      const isCommandEnabled = foundCommand?.enabled;
+    if (!foundCommand) {
+      await this.sendMessageCommandNotFound(
+        discordMessage.commandName,
+        discordMessage,
+      );
+      return;
+    }
 
-      if (!isCommandEnabled) {
-        await this.sendMessageCommandNotEnabled(foundCommand, discordMessage);
-        return;
-      }
+    const isCommandEnabled = foundCommand?.enabled;
 
-      const isCommandAllowedInCurrentChannel = isCommandAllowedInChannel(
-        foundCommand.allowedChannel.id,
-        discordMessage.channelId,
+    if (!isCommandEnabled) {
+      await this.sendMessageCommandNotEnabled(foundCommand, discordMessage);
+      return;
+    }
+
+    const isCommandAllowedInCurrentChannel = isCommandAllowedInChannel(
+      foundCommand.allowedChannel.id,
+      discordMessage.channelId,
+    );
+
+    if (!isCommandAllowedInCurrentChannel) {
+      console.log(
+        `Command "${foundCommand.name}" is not allowed in channel ${discordMessage.channelId}, ignoring...`,
       );
 
-      if (!isCommandAllowedInCurrentChannel) {
-        console.log(
-          `Command "${foundCommand.name}" is not allowed in channel ${discordMessage.channelId}, ignoring...`,
-        );
+      await this.sendCommandNotAllowedInChannelMessage(discordMessage);
+      return;
+    }
 
-        await this.sendCommandNotAllowedInChannelMessage(discordMessage);
-        return;
-      }
+    const doesUserHaveRole =
+      await this.doesMessageAuthorHaveRoleToRunSpecifiedCommand(
+        foundCommand,
+        discordMessage,
+      );
 
-      const doesUserHaveRole =
-        await this.doesMessageAuthorHaveRoleToRunSpecifiedCommand(
-          foundCommand,
-          discordMessage,
-        );
+    if (!doesUserHaveRole) {
+      console.log(
+        `Command "${foundCommand.name}" is not allowed for user ${discordMessage.author.id} with role ${foundCommand.allowedRole.name}, ignoring...`,
+      );
 
-      if (!doesUserHaveRole) {
-        console.log(
-          `Command "${foundCommand.name}" is not allowed for user ${discordMessage.author.id} with role ${foundCommand.allowedRole.name}, ignoring...`,
-        );
+      await this.sendCommandNotAllowedWithRoleMessage(discordMessage);
+      return;
+    }
 
-        await this.sendCommandNotAllowedWithRoleMessage(discordMessage);
-        return;
-      }
-
+    try {
       const builder = await this.buildersRepository.findById(
         foundCommand.builderId,
       );
@@ -397,10 +421,9 @@ export class CommandsService {
 
       executeNodes(nodes, edges, processNode);
     } catch (err) {
-      console.log(`Catch error: ${err.message}`);
+      console.log(`Catch error: ${err}`);
 
       // TODO: allow user to create custom error message
-
       await this.commandsRepository.replyMessage(
         "Ops! Something went wrong while executing this command. Please, try again later.",
         discordMessage,

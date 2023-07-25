@@ -9,12 +9,15 @@ import {
   Patch,
   Post,
 } from "@nestjs/common";
-import { HttpResponses } from "src/shared/responses";
+import { HttpResponses } from "src/shared";
 import { CommandsService } from "./commands.service";
-import { CreateCommandDto } from "./dto/create-command.dto";
-import { DeleteCommandDto } from "./dto/delete-command.dto";
-import { RunCommandDto } from "./dto/run-command.dto";
-import { UpdateCommandDto } from "./dto/update-command.dto";
+
+import {
+  CreateCommandDto,
+  DeleteCommandDto,
+  RunCommandDto,
+  UpdateCommandDto,
+} from "./dto";
 
 @Controller("commands")
 export class CommandsController {
@@ -28,6 +31,18 @@ export class CommandsController {
         createCommandDto,
       );
       return HttpResponses.parseSuccess(createdBuilderId, HttpStatus.CREATED);
+    } catch (err) {
+      return HttpResponses.throwException(err.message, err?.status);
+    }
+  }
+
+  @Get(":id")
+  @HttpCode(HttpStatus.OK)
+  async findById(@Param() params: { id: string }) {
+    try {
+      const command = await this.commandsService.findById(params.id);
+
+      return HttpResponses.parseSuccess(command, HttpStatus.OK);
     } catch (err) {
       return HttpResponses.throwException(err.message, err?.status);
     }

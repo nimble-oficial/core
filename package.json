@@ -18,11 +18,15 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "format:write": "prettier --write \"**.{ts,js,mdx}\"",
+    "format:check": "prettier --check \"**.{ts,js,mdx}\"",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@discordjs/rest": "^1.7.1",
     "@enriqcg/nestjs-amqp": "^1.0.1",
+    "@golevelup/nestjs-rabbitmq": "^3.6.1",
     "@nestjs/common": "^9.0.0",
     "@nestjs/config": "^2.3.2",
     "@nestjs/core": "^9.0.0",
@@ -68,7 +72,6 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"

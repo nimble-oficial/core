@@ -6,14 +6,12 @@ export class NodeHandler {
   constructor(private commandsRepository: CommandsRepository) {}
 
   async execute(data: BuilderNodeData, message: DiscordMessageDto) {
-    if (!data.enabled) {
+    if (data.enabled === false) {
       console.log(`Node ${data.key} is disabled. Ignoring...`);
       return;
     }
-    // TODO: add as config option
-    await this.commandsRepository.showTyping(message);
 
-    // TODO: add timeout
+    await this.commandsRepository.showTyping(message);
 
     switch (data?.key) {
       case "send-message":

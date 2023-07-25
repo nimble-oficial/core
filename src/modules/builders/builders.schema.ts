@@ -14,6 +14,9 @@ export class BuilderViewPort {
 
 export class BuilderNodeData {
   @Prop({ required: false })
+  name: string;
+
+  @Prop({ required: false })
   content: string;
 
   @Prop({ required: false })

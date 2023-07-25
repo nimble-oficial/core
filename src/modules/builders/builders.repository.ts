@@ -19,9 +19,7 @@ export class BuildersRepository {
   ) {}
 
   private hasRootNode(nodes: any[]): boolean {
-    return nodes.find(
-      (node) => node.isRoot && node.data.key === initialBuilderNode.data.key,
-    );
+    return nodes.some((node) => node?.isRoot);
   }
 
   async save(saveBuilderDto: SaveBuilderDto): Promise<void> {

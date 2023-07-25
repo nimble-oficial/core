@@ -5,11 +5,11 @@ import { DEFAULT_OPTION_VALUES } from "src/shared";
 import { DiscordRepository } from "../discord/discord.repository";
 import { DiscordMessageDto } from "../discord/dto/discord-message.dto";
 import { Commands } from "./commands.schema";
-import { CreateCommandDto } from "./dto/create-command.dto";
-import { UpdateCommandDto } from "./dto/update-command.dto";
+import { CreateCommandDto, UpdateCommandDto } from "./dto";
+import { ICommandsRepository } from "./interfaces";
 
 @Injectable()
-export class CommandsRepository {
+export class CommandsRepository implements ICommandsRepository {
   constructor(
     private discordRepository: DiscordRepository,
     @InjectModel(Commands.name) private commandsModel: Model<Commands>,
@@ -34,6 +34,14 @@ export class CommandsRepository {
       name: commandName,
       guildId,
     });
+  }
+
+  async findById(commandId: string): Promise<Commands | null> {
+    return this.commandsModel
+      .findById(commandId)
+      .select(
+        "enabled name description builderId createdAt guildId allowedChannel allowedRole sendCommandNotEnabledMessage commandNotEnabledMessage",
+      );
   }
 
   async findAllByGuildId(guildId: string): Promise<Commands[]> {
@@ -81,11 +89,17 @@ export class CommandsRepository {
     });
   }
 
-  async sendNotEnabledMessage(content: string, message: DiscordMessageDto) {
+  async sendNotEnabledMessage(
+    content: string,
+    message: DiscordMessageDto,
+  ): Promise<void> {
     return this.discordRepository.replyMessage(content, message);
   }
 
-  async sendNotFoundMessage(commandName: string, message: DiscordMessageDto) {
+  async sendNotFoundMessage(
+    commandName: string,
+    message: DiscordMessageDto,
+  ): Promise<void> {
     return this.discordRepository.sendPlainText(
       `O comando "${commandName}" não existe.`,
       message.channelId,
